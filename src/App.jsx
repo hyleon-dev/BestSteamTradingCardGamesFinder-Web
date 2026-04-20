@@ -9,7 +9,82 @@ import Table from 'react-bootstrap/Table';
 import Form from 'react-bootstrap/Form';
 import {ButtonToolbar, InputGroup} from "react-bootstrap";
 
+import Game from "./Game.jsx";
+
 function App() {
+
+  const [games, setGames] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchAndProcessGames = async () => {
+    setIsLoading(true);
+    setGames([]);
+    try {
+
+      // Loading all Games with Trading Cards
+      const steamCardExchangeResponse = await fetch('https://corsproxy.io/?url=https://www.steamcardexchange.net/api/request.php?GetBadgePrices_Guest');
+      if (!steamCardExchangeResponse.ok) {
+        throw new Error(`SteamCardExchange request failed: ${steamCardExchangeResponse.status}`);
+      }
+      const steamCardExchangeJson = await steamCardExchangeResponse.json();
+      const steamCardExchangeData = steamCardExchangeJson?.data ?? [];
+
+      // Bundle in Packages for SteamAPI calls
+      const packages = [];
+      for (let i = 0; i < steamCardExchangeData.length; i += 99) {
+        packages.push(steamCardExchangeData.slice(i, i + 99));
+      }
+
+      // Load Steam Data for each Package
+      const nextGames = [];
+      const sceById = new Map(
+          steamCardExchangeData.map((entry) => [String(entry?.[0]?.[0]), entry])
+      );
+
+      for (const pack of packages) {
+
+        let urlIdPart = "";
+        pack.forEach(data => {
+          urlIdPart += data[0][0] + ","
+        });
+        urlIdPart = urlIdPart.slice(0, urlIdPart.length - 1); // Remove last comma
+        const targetUrl = `https://store.steampowered.com/api/appdetails?appids=${urlIdPart}&cc=DE&filters=price_overview`;
+        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+
+        const steamApiPriceResponse = await fetch(proxyUrl);
+        if (!steamApiPriceResponse.ok) {
+          throw new Error(`Steam API request failed: ${steamApiPriceResponse.status}`);
+        }
+        const steamApiPriceData =  await steamApiPriceResponse.json();
+
+        Object.entries(steamApiPriceData).forEach(([id, priceData]) => {
+          const initialPrice = priceData?.data?.price_overview?.initial;
+          const finalPrice = priceData?.data?.price_overview?.final;
+          const finalFormatted = priceData?.data?.price_overview?.final_formatted;
+          const sceData = sceById.get(String(id));
+          const numberOfCards = Number(sceData?.[1]);
+
+          if (priceData?.success === true && typeof initialPrice === "number" && initialPrice > 0 && Number.isFinite(numberOfCards) && numberOfCards > 0 && typeof finalPrice === "number") {
+            const gameData = {
+              id: id,
+              name: sceData?.[0]?.[1] ?? id,
+              score: finalPrice / numberOfCards,
+              price: finalFormatted ?? "",
+              numberOfCards: numberOfCards
+            };
+            nextGames.push(gameData);
+          }
+        });
+      }
+      setGames(nextGames);
+      // not working currently
+
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
       <div className="container">
@@ -27,7 +102,7 @@ function App() {
             {/*Loading Bar (?)*/}
           </div>
           <div className="col-2 box">
-            <Button className="btn-primary w-auto">Load Button</Button>
+            <Button className="btn-primary w-auto" onClick={fetchAndProcessGames} disabled={isLoading}>Load Button</Button>
           </div>
         </div>
         {/*<div className="row">
@@ -59,7 +134,7 @@ function App() {
         </div>*/}
         <div className="row">
           <div className="col box flex-nowrap">
-            <InputGroup>
+            <InputGroup disabled={isLoading}>
               <InputGroup.Text id="searchInput">🔎</InputGroup.Text>
               <Form.Control className="search-text-field"
                             id="searchInputTextField"
@@ -72,18 +147,11 @@ function App() {
         </div>
 
         <div className="row">
-          <Table className="">
-            <thead>
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">ID</th>
-              <th scope="col">Cards</th>
-              <th scope="col">Price</th>
-              <th scope="col">Rating</th>
-              <th scope="col">Status</th>
-            </tr>
-            </thead>
-          </Table>
+          <div className="game-grid">
+            {games.map((game) => (
+              <Game key={game.id} data={game} />
+            ))}
+          </div>
         </div>
       </div>
   )
