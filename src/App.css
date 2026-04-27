@@ -1,15 +1,52 @@
+/* Color palette: https://colorswall.com/de/palette/193 */
+
+body {
+  --steam-black: #171a21;
+  --steam-white: #c7d5e0;
+  --steam-light-gray: #2a475e;
+  --steam-dark-gray: #1b2838;
+  --steam-blue: #66c0f4;
+
+  background-color: var(--steam-light-gray) !important;
+}
+
 .header {
   font-size: 24px;
   font-weight: bold;
   text-align: center;
   margin-bottom: 20px;
+  color: var(--steam-white);
 }
 
 .box {
-  border: 1px solid black;
+  /*border: 1px solid black;*/
   padding: 0.5em;
 }
 
+.search-text-icon,
 .search-text-field {
+  background-color: var(--steam-white) !important;
+}
 
+.shop-region-select {
+  background-color: var(--steam-white) !important;
+}
+
+.btn-primary {
+  background-color: var(--steam-dark-gray) !important;
+  border-color: var(--steam-dark-gray) !important;
+}
+
+progress {
+  appearance: none;
+}
+
+::-webkit-progress-bar {
+  border-radius: var(--bs-border-radius);
+  background-color: var(--steam-white);
+}
+
+::-webkit-progress-value {
+  border-radius: var(--bs-border-radius);
+  background-color: var(--steam-blue);
 }

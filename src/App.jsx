@@ -1,38 +1,45 @@
-import { useState } from 'react'
+import {useState} from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
 import Button from 'react-bootstrap/Button';
-import Table from 'react-bootstrap/Table';
 import Form from 'react-bootstrap/Form';
-import {ButtonToolbar, InputGroup} from "react-bootstrap";
+import {InputGroup} from "react-bootstrap";
 
 import Game from "./Game.jsx";
 
 function App() {
 
+  const gamesBatchSize = 100;
+
+  const [totalGames, setTotalGames] = useState(0);
+  const [loadingProgress, setLoadingProgress] = useState(0);
   const [games, setGames] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const fetchAndProcessGames = async () => {
     setIsLoading(true);
     setGames([]);
+    setLoadingProgress(0);
     try {
 
       // Loading all Games with Trading Cards
-      const steamCardExchangeResponse = await fetch('https://corsproxy.io/?url=https://www.steamcardexchange.net/api/request.php?GetBadgePrices_Guest');
+      const steamCardExchangeTargetUrl = `https://www.steamcardexchange.net/api/request.php?GetBadgePrices_Guest`;
+      const steamCardExchangeProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(steamCardExchangeTargetUrl)}`;
+      const steamCardExchangeResponse = await fetch(steamCardExchangeProxyUrl);
       if (!steamCardExchangeResponse.ok) {
         throw new Error(`SteamCardExchange request failed: ${steamCardExchangeResponse.status}`);
       }
       const steamCardExchangeJson = await steamCardExchangeResponse.json();
       const steamCardExchangeData = steamCardExchangeJson?.data ?? [];
+      setTotalGames(steamCardExchangeData.length)
 
       // Bundle in Packages for SteamAPI calls
       const packages = [];
-      for (let i = 0; i < steamCardExchangeData.length; i += 99) {
-        packages.push(steamCardExchangeData.slice(i, i + 99));
+      for (let i = 0; i < steamCardExchangeData.length; i += gamesBatchSize) {
+        packages.push(steamCardExchangeData.slice(i, i + gamesBatchSize));
       }
 
       // Load Steam Data for each Package
@@ -43,21 +50,22 @@ function App() {
       for (const pack of packages) {
         const nextGames = [];
 
+        // Build URL for Steam API
         let urlIdPart = "";
         pack.forEach(data => {
           urlIdPart += data[0][0] + ","
         });
         urlIdPart = urlIdPart.slice(0, urlIdPart.length - 1); // Remove last comma
-        const targetUrl = `https://store.steampowered.com/api/appdetails?appids=${urlIdPart}&cc=DE&filters=price_overview`;
-        const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(targetUrl)}`;
+        const steamApiTargetUrl = `https://store.steampowered.com/api/appdetails?appids=${urlIdPart}&cc=DE&filters=price_overview`;
+        const steamApiProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(steamApiTargetUrl)}`;
 
-        const steamApiPriceResponse = await fetch(proxyUrl);
+        const steamApiPriceResponse = await fetch(steamApiProxyUrl);
         if (!steamApiPriceResponse.ok) {
           throw new Error(`Steam API request failed: ${steamApiPriceResponse.status}`);
         }
-        const steamApiPriceData =  await steamApiPriceResponse.json();
+        const steamApiPriceData = Object.entries(await steamApiPriceResponse.json());
 
-        Object.entries(steamApiPriceData)
+        steamApiPriceData
         .filter(([_, value]) => value?.success === true)
         .forEach(([id, priceData]) => {
           const initialPrice = priceData?.data?.price_overview?.initial;
@@ -66,7 +74,9 @@ function App() {
           const sceData = sceById.get(String(id));
           const numberOfCards = Number(sceData?.[1]);
 
-          if (priceData?.success === true && typeof initialPrice === "number" && initialPrice > 0 && Number.isFinite(numberOfCards) && numberOfCards > 0 && typeof finalPrice === "number") {
+          if (priceData?.success === true && typeof initialPrice === "number"
+              && initialPrice > 0 && Number.isFinite(numberOfCards)
+              && numberOfCards > 0 && typeof finalPrice === "number") {
             const gameData = {
               id: id,
               name: sceData?.[0]?.[1] ?? id,
@@ -77,9 +87,9 @@ function App() {
             nextGames.push(gameData);
           }
         });
-        setGames((prev) => [...prev, ...nextGames].sort((a, b) => a.score - b.score))
+        setGames((loadedGames) => [...loadedGames, ...nextGames].sort((a, b) => a.score - b.score))
+        setLoadingProgress((progress) => progress + steamApiPriceData.length);
       }
-
     } catch (e) {
       console.error(e);
     } finally {
@@ -95,15 +105,18 @@ function App() {
 
         <div className="row">
           <div className="col-4 box">
-            <Form.Select aria-label="Select Shop Region">
+            <Form.Select className="shop-region-select" id="shop-region-select" aria-label="Select Shop Region" data-style="btn-primary">
 
             </Form.Select>
           </div>
           <div className="col box">
-            {/*Loading Bar (?)*/}
+            <progress className="w-100 h-100" value={loadingProgress} max={totalGames}>%</progress>
           </div>
           <div className="col-2 box">
-            <Button className="btn-primary w-auto" onClick={fetchAndProcessGames} disabled={isLoading}>Load Button</Button>
+            <Button className="btn-primary w-auto"
+                    onClick={fetchAndProcessGames} disabled={isLoading}>
+              Load Button
+            </Button>
           </div>
         </div>
         {/*<div className="row">
@@ -135,14 +148,17 @@ function App() {
         </div>*/}
         <div className="row">
           <div className="col box flex-nowrap">
-            <InputGroup disabled={isLoading}>
-              <InputGroup.Text id="searchInput">🔎</InputGroup.Text>
+            <InputGroup className="search-text-group" disabled={isLoading}>
+              <InputGroup.Text id="searchInput" className="search-text-icon">🔎</InputGroup.Text>
               <Form.Control className="search-text-field"
                             id="searchInputTextField"
                             aria-describedby="searchInput" type="text"
                             placeholder="..."/>
-              <Button className="btn-secondary" id={"searchInputClear"}
-                      aria-describedby="searchInput">X</Button>
+              <Button className="btn-secondary"
+                      id={"searchInputClear"}
+                      aria-describedby="searchInput">
+                X
+              </Button>
             </InputGroup>
           </div>
         </div>
@@ -150,7 +166,7 @@ function App() {
         <div className="row">
           <div className="game-grid">
             {games.map((game) => (
-              <Game key={game.id} data={game} />
+                <Game key={game.id} data={game}/>
             ))}
           </div>
         </div>
