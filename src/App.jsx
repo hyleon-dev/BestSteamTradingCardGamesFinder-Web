@@ -36,12 +36,12 @@ function App() {
       }
 
       // Load Steam Data for each Package
-      const nextGames = [];
       const sceById = new Map(
           steamCardExchangeData.map((entry) => [String(entry?.[0]?.[0]), entry])
       );
 
       for (const pack of packages) {
+        const nextGames = [];
 
         let urlIdPart = "";
         pack.forEach(data => {
@@ -57,7 +57,9 @@ function App() {
         }
         const steamApiPriceData =  await steamApiPriceResponse.json();
 
-        Object.entries(steamApiPriceData).forEach(([id, priceData]) => {
+        Object.entries(steamApiPriceData)
+        .filter(([_, value]) => value?.success === true)
+        .forEach(([id, priceData]) => {
           const initialPrice = priceData?.data?.price_overview?.initial;
           const finalPrice = priceData?.data?.price_overview?.final;
           const finalFormatted = priceData?.data?.price_overview?.final_formatted;
@@ -75,9 +77,8 @@ function App() {
             nextGames.push(gameData);
           }
         });
+        setGames((prev) => [...prev, ...nextGames].sort((a, b) => a.score - b.score))
       }
-      setGames(nextGames);
-      // not working currently
 
     } catch (e) {
       console.error(e);
