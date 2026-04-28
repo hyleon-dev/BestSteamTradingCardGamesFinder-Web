@@ -17,11 +17,13 @@ export async function onRequestGet(context) {
   const url = new URL(context.request.url);
   const urlIdPart = url.searchParams.get("appids");
   const appIds = urlIdPart
-    ?.split(",")
-    .map((appId) => appId.trim())
-    .filter((appId) => /^\d+$/.test(appId));
+    ? urlIdPart
+      .split(",")
+      .map((appId) => appId.trim())
+      .filter((appId) => /^\d+$/.test(appId))
+    : [];
 
-  if (!appIds?.length) {
+  if (appIds.length === 0) {
     return Response.json(
       {error: "No appids provided"},
       {status: 400, headers: proxyHeaders},
@@ -50,7 +52,7 @@ export async function onRequestGet(context) {
       statusText: response.statusText,
       headers: {
         ...proxyHeaders,
-        "Content-Type": response.headers.get("Content-Type") ?? "application/json; charset=utf-8",
+        "Content-Type": response.headers.get("Content-Type") || "application/json; charset=utf-8",
       },
     });
   } catch {

@@ -30,7 +30,7 @@ export async function onRequestGet() {
       statusText: response.statusText,
       headers: {
         ...proxyHeaders,
-        "Content-Type": response.headers.get("Content-Type") ?? "application/json; charset=utf-8",
+        "Content-Type": response.headers.get("Content-Type") || "application/json; charset=utf-8",
       },
     });
   } catch {
