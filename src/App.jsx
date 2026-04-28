@@ -7,6 +7,31 @@ import {InputGroup} from "react-bootstrap";
 
 import Game from "./Game.jsx";
 
+async function fetchJson(url, label) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+    },
+  });
+  const contentType = response.headers.get("Content-Type") || "";
+  const body = await response.text();
+  const bodyStart = body.slice(0, 200);
+
+  if (!response.ok) {
+    throw new Error(`${label} request failed: ${response.status} ${response.statusText}. URL: ${url}. Body: ${bodyStart}`);
+  }
+
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new Error(`${label} did not return JSON. URL: ${url}. Content-Type: ${contentType || "unknown"}. Body: ${bodyStart}`);
+  }
+
+  try {
+    return JSON.parse(body);
+  } catch (error) {
+    throw new Error(`${label} returned invalid JSON. URL: ${url}. Content-Type: ${contentType || "unknown"}. Body: ${bodyStart}. Parse error: ${error.message}`);
+  }
+}
+
 function App() {
 
   const gamesBatchSize = 100;
@@ -26,11 +51,7 @@ function App() {
       // const steamCardExchangeTargetUrl = `https://www.steamcardexchange.net/api/request.php?GetBadgePrices_Guest`;
       // const steamCardExchangeProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(steamCardExchangeTargetUrl)}`;
       // const steamCardExchangeResponse = await fetch(steamCardExchangeProxyUrl);
-      const steamCardExchangeResponse = await fetch('/steamcardexchange');
-      if (!steamCardExchangeResponse.ok) {
-        throw new Error(`SteamCardExchange request failed: ${steamCardExchangeResponse.status}`);
-      }
-      const steamCardExchangeJson = await steamCardExchangeResponse.json();
+      const steamCardExchangeJson = await fetchJson('/steamcardexchange', 'SteamCardExchange');
       const steamCardExchangeData = steamCardExchangeJson?.data ?? [];
       setTotalGames(steamCardExchangeData.length)
 
@@ -55,11 +76,8 @@ function App() {
         });
         urlIdPart = urlIdPart.slice(0, urlIdPart.length - 1); // Remove last comma
 
-        const steamApiPriceResponse = await fetch(`/steam?appids=${encodeURIComponent(urlIdPart)}`);
-        if (!steamApiPriceResponse.ok) {
-          throw new Error(`Steam API request failed: ${steamApiPriceResponse.status}`);
-        }
-        const steamApiPriceData = Object.entries(await steamApiPriceResponse.json());
+        const steamUrl = `/steam?appids=${encodeURIComponent(urlIdPart)}`;
+        const steamApiPriceData = Object.entries(await fetchJson(steamUrl, 'Steam API'));
 
         steamApiPriceData
         .filter(([, value]) => value?.success === true)
@@ -87,7 +105,7 @@ function App() {
         setLoadingProgress((progress) => progress + steamApiPriceData.length);
       }
     } catch (e) {
-      console.error(e);
+      console.error("Game loading failed", e);
     } finally {
       setIsLoading(false);
     }
