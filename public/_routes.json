@@ -2,7 +2,9 @@
   "version": 1,
   "include": [
     "/steam",
-    "/steamcardexchange"
+    "/steamcardexchange",
+    "/steam/*",
+    "/steamcardexchange/*"
   ],
   "exclude": []
 }
