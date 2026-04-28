@@ -55,7 +55,7 @@ function App() {
         });
         urlIdPart = urlIdPart.slice(0, urlIdPart.length - 1); // Remove last comma
 
-        const steamApiPriceResponse = await fetch(`/steam?appids=${urlIdPart}`);
+        const steamApiPriceResponse = await fetch(`/steam?appids=${encodeURIComponent(urlIdPart)}`);
         if (!steamApiPriceResponse.ok) {
           throw new Error(`Steam API request failed: ${steamApiPriceResponse.status}`);
         }

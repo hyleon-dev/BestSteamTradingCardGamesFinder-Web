@@ -16,18 +16,27 @@ export async function onRequestGet(context) {
 
   const url = new URL(context.request.url);
   const urlIdPart = url.searchParams.get("appids");
+  const appIds = urlIdPart
+    ?.split(",")
+    .map((appId) => appId.trim())
+    .filter((appId) => /^\d+$/.test(appId));
 
-  if (!urlIdPart) {
+  if (!appIds?.length) {
     return Response.json(
       {error: "No appids provided"},
       {status: 400, headers: proxyHeaders},
     );
   }
 
-  const targetUrl = `https://store.steampowered.com/api/appdetails?appids=${urlIdPart}&cc=DE&filters=price_overview`;
+  const targetUrl = new URL("https://store.steampowered.com/api/appdetails");
+  targetUrl.searchParams.set("appids", appIds.join(","));
+  targetUrl.searchParams.set("cc", "DE");
+  targetUrl.searchParams.set("filters", "price_overview");
+
+  console.log(`Requesting ${targetUrl.toString()}`);
 
   try {
-    const response = await fetch(targetUrl, {
+    const response = await fetch(targetUrl.toString(), {
       headers: {
         Accept: "application/json, text/plain, */*",
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",

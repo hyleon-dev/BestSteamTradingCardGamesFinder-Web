@@ -23,7 +23,11 @@ export default defineConfig({
           Accept: 'application/json, text/plain, */*',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         },
-        rewrite: (path) => path.replace(/^\/steam/, '/api/appdetails'),
+        rewrite: (path) => {
+          const url = new URL(path, 'http://localhost')
+          const appIds = url.searchParams.get('appids') ?? ''
+          return `/api/appdetails?appids=${encodeURIComponent(appIds)}&cc=DE&filters=price_overview`
+        },
       },
     },
   },
