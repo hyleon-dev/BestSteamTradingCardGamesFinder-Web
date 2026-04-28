@@ -1,7 +1,4 @@
 import {useState} from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 
 import Button from 'react-bootstrap/Button';
@@ -26,9 +23,10 @@ function App() {
     try {
 
       // Loading all Games with Trading Cards
-      const steamCardExchangeTargetUrl = `https://www.steamcardexchange.net/api/request.php?GetBadgePrices_Guest`;
-      const steamCardExchangeProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(steamCardExchangeTargetUrl)}`;
-      const steamCardExchangeResponse = await fetch(steamCardExchangeProxyUrl);
+      // const steamCardExchangeTargetUrl = `https://www.steamcardexchange.net/api/request.php?GetBadgePrices_Guest`;
+      // const steamCardExchangeProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(steamCardExchangeTargetUrl)}`;
+      // const steamCardExchangeResponse = await fetch(steamCardExchangeProxyUrl);
+      const steamCardExchangeResponse = await fetch('/steamcardexchange');
       if (!steamCardExchangeResponse.ok) {
         throw new Error(`SteamCardExchange request failed: ${steamCardExchangeResponse.status}`);
       }
@@ -56,17 +54,15 @@ function App() {
           urlIdPart += data[0][0] + ","
         });
         urlIdPart = urlIdPart.slice(0, urlIdPart.length - 1); // Remove last comma
-        const steamApiTargetUrl = `https://store.steampowered.com/api/appdetails?appids=${urlIdPart}&cc=DE&filters=price_overview`;
-        const steamApiProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(steamApiTargetUrl)}`;
 
-        const steamApiPriceResponse = await fetch(steamApiProxyUrl);
+        const steamApiPriceResponse = await fetch(`/steam?appids=${urlIdPart}`);
         if (!steamApiPriceResponse.ok) {
           throw new Error(`Steam API request failed: ${steamApiPriceResponse.status}`);
         }
         const steamApiPriceData = Object.entries(await steamApiPriceResponse.json());
 
         steamApiPriceData
-        .filter(([_, value]) => value?.success === true)
+        .filter(([, value]) => value?.success === true)
         .forEach(([id, priceData]) => {
           const initialPrice = priceData?.data?.price_overview?.initial;
           const finalPrice = priceData?.data?.price_overview?.final;
