@@ -104,11 +104,11 @@ function App() {
         </div>
 
         <div className="row">
-          <div className="col-4 box">
+          {/*<div className="col-4 box">
             <Form.Select className="shop-region-select" id="shop-region-select" aria-label="Select Shop Region" data-style="btn-primary">
 
             </Form.Select>
-          </div>
+          </div>*/}
           <div className="col box">
             <progress className="w-100 h-100" value={loadingProgress} max={totalGames}>%</progress>
           </div>
