@@ -1,15 +1,13 @@
 
 .game-card {
-  border: 1px solid var(--steam-dark-gray);
-  border-radius: 8px;
+  background-color: var(--steam-black) !important;
+  color: var(--steam-white) !important;
 
-  background-color: var(--steam-black);
-  color: var(--steam-white);
+  flex-direction: row !important;
 
   margin: 1em;
 }
 
-.game-image {
-  width: 100%;
-  height: auto;
+.game-card-img {
+  width: 20% !important;
 }

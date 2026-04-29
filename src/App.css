@@ -40,12 +40,10 @@ body {
 progress {
   appearance: none;
 }
-
 ::-webkit-progress-bar {
   border-radius: var(--bs-border-radius);
   background-color: var(--steam-white);
 }
-
 ::-webkit-progress-value {
   border-radius: var(--bs-border-radius);
   background-color: var(--steam-blue);
