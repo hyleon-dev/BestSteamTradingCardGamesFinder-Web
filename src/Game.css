@@ -1,0 +1,15 @@
+
+.game-card {
+  border: 1px solid var(--steam-dark-gray);
+  border-radius: 8px;
+
+  background-color: var(--steam-black);
+  color: var(--steam-white);
+
+  margin: 1em;
+}
+
+.game-image {
+  width: 100%;
+  height: auto;
+}

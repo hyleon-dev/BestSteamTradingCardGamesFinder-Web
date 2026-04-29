@@ -47,10 +47,6 @@ function App() {
     setLoadingProgress(0);
     try {
 
-      // Loading all Games with Trading Cards
-      // const steamCardExchangeTargetUrl = `https://www.steamcardexchange.net/api/request.php?GetBadgePrices_Guest`;
-      // const steamCardExchangeProxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(steamCardExchangeTargetUrl)}`;
-      // const steamCardExchangeResponse = await fetch(steamCardExchangeProxyUrl);
       const steamCardExchangeJson = await fetchJson('/steamcardexchange', 'SteamCardExchange');
       const steamCardExchangeData = steamCardExchangeJson?.data ?? [];
       setTotalGames(steamCardExchangeData.length)
@@ -96,7 +92,8 @@ function App() {
               name: sceData?.[0]?.[1] ?? id,
               score: finalPrice / numberOfCards,
               price: finalFormatted ?? "",
-              numberOfCards: numberOfCards
+              numberOfCards: numberOfCards,
+              imgUrl: `https://shared.akamai.steamstatic.com/store_item_assets/steam/apps/${id}/library_600x900.jpg`
             };
             nextGames.push(gameData);
           }
