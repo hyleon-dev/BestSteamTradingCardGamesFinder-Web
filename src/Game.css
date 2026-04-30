@@ -2,12 +2,38 @@
 .game-card {
   background-color: var(--steam-black) !important;
   color: var(--steam-white) !important;
-
   flex-direction: row !important;
-
   margin: 1em;
+  width: 50%;
 }
 
-.game-card-img {
-  width: 20% !important;
+.game-info-col {
+  height: 100% !important;
+}
+
+.img-col {
+  padding: 0 !important;
+
+  img {
+    min-height: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+  }
+}
+
+.actions-row {
+  padding: 0 !important;
+  flex-direction: row !important;
+  align-content: baseline !important;
+
+  .col {
+    padding: 0 !important;
+    height: 100%;
+  }
+
+  .btn {
+    height: 100%;
+    width: 100%;
+    border-radius: 0 !important;
+  }
 }
