@@ -4,6 +4,7 @@ import './App.css'
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import {InputGroup} from "react-bootstrap";
+import InfiniteScroll from 'react-infinite-scroll-component';
 
 import Game from "./Game.jsx";
 
@@ -175,6 +176,12 @@ function App() {
         </div>
 
         <div className="row">
+          {/* TODO
+          <InfiniteScroll dataLength={games.length} next={() => void} hasMore={false} loader={<p>Loading...</p>}>
+            {games.map((game) => (
+                <Game key={game.id} data={game}/>
+            ))}
+          </InfiniteScroll>*/}
           <div className="game-grid">
             {games.map((game) => (
                 <Game key={game.id} data={game}/>

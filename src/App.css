@@ -39,10 +39,18 @@ body {
 
 .game-grid {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: space-between;
-  flex-direction: row;
+  flex-direction: column;
   align-content: flex-start;
+  padding: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .game-grid {
+    flex-wrap: wrap;
+    flex-direction: row;
+  }
 }
 
 progress {

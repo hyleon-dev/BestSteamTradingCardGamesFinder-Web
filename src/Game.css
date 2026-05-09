@@ -1,14 +1,28 @@
 
 .game-card {
-  background-color: var(--steam-black) !important;
-  color: var(--steam-white) !important;
-  flex-direction: row !important;
-  margin: 1em;
-  width: 50%;
+  --bs-gutter-x: 0;
+  display: flex;
+  flex-direction: row;
+  background-color: var(--steam-black);
+  color: var(--steam-white);
+  margin-bottom: 1em;
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .game-card {
+    width: 50%;
+  }
 }
 
 .game-info-col {
+  display: flex !important;
+  flex-direction: column !important;
   height: 100% !important;
+}
+
+.game-info-bottom {
+  margin-top: auto;
 }
 
 .img-col {
@@ -28,11 +42,9 @@
 
   .col {
     padding: 0 !important;
-    height: 100%;
   }
 
   .btn {
-    height: 100%;
     width: 100%;
     border-radius: 0 !important;
   }
