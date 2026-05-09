@@ -11,7 +11,8 @@
 
 @media (min-width: 768px) {
   .game-card {
-    width: 50%;
+    width: calc(50% - 0.5em);
+    margin: 0.25em;
   }
 }
 
