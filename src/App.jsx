@@ -148,7 +148,7 @@ function App() {
   return (
       <div className="container-fluid">
         <div className="row header justify-content-center">
-          [WIP] Best Steam Trading Card Games Finder
+          Best Steam Trading Card Games Finder
         </div>
 
         <div className="row">
