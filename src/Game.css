@@ -5,34 +5,42 @@
   flex-direction: row;
   background-color: var(--steam-black);
   color: var(--steam-white);
-  margin-bottom: 1em;
-  width: 100%;
+  min-width: 0;
 }
 
-@media (min-width: 768px) {
-  .game-card {
-    width: calc(50% - 0.5em);
-    margin: 0.25em;
-  }
+/* Bootstrap rows have a negative gutter margin. Inside the card it pushes the rows out. */
+.game-card .row {
+  --bs-gutter-x: 0;
 }
 
 .game-info-col {
   display: flex !important;
   flex-direction: column !important;
-  height: 100% !important;
+  min-width: 0;
+  padding: 0.5em 0 0;
+
+  h3 {
+    font-size: 1.4rem;
+    overflow-wrap: anywhere;
+  }
 }
 
 .game-info-bottom {
   margin-top: auto;
 }
 
+/* Cover images are 600x900. The column keeps this ratio, so the full image is visible. */
 .img-col {
+  flex: 0 0 40%;
+  max-width: 40%;
   padding: 0 !important;
 
   img {
-    min-height: 100% !important;
-    width: 100% !important;
-    height: auto !important;
+    display: block;
+    width: 100%;
+    height: 100%;
+    aspect-ratio: 2 / 3;
+    object-fit: cover;
   }
 }
 
@@ -41,12 +49,16 @@
   flex-direction: row !important;
   align-content: baseline !important;
 
+  flex-wrap: nowrap;
+
   .col {
     padding: 0 !important;
+    min-width: 0;
   }
 
   .btn {
     width: 100%;
     border-radius: 0 !important;
+    padding-inline: 0.25rem;
   }
 }

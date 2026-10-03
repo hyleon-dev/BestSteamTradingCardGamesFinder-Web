@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useMemo, useState} from 'react'
 import './App.css'
 
 import Button from 'react-bootstrap/Button';
@@ -33,19 +33,45 @@ async function fetchJson(url, label) {
   }
 }
 
-function App() {
+// SteamCardExchange sends names with HTML entities (e.g. &#039;). Decode them to plain text.
+const htmlDecoder = document.createElement("textarea");
 
-  const gamesBatchSize = 100;
+function decodeHtml(text) {
+  htmlDecoder.innerHTML = text;
+  return htmlDecoder.value;
+}
+
+const gamesBatchSize = 100;
+const gamesPageSize = 60;
+
+function App() {
 
   const [totalGames, setTotalGames] = useState(0);
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [games, setGames] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [failedBatches, setFailedBatches] = useState(0);
+  const [searchText, setSearchText] = useState("");
+  const [visibleCount, setVisibleCount] = useState(gamesPageSize);
+
+  const filteredGames = useMemo(() => {
+    const search = searchText.trim().toLowerCase();
+    return search ? games.filter((game) => game.name.toLowerCase().includes(search)) : games;
+  }, [games, searchText]);
+
+  const onSearchChange = (text) => {
+    setSearchText(text);
+    setVisibleCount(gamesPageSize);
+  };
 
   const fetchAndProcessGames = async () => {
     setIsLoading(true);
     setGames([]);
     setLoadingProgress(0);
+    setVisibleCount(gamesPageSize);
+    setErrorMessage("");
+    setFailedBatches(0);
     try {
 
       const steamCardExchangeJson = await fetchJson('/steamcardexchange', 'SteamCardExchange');
@@ -74,7 +100,16 @@ function App() {
         urlIdPart = urlIdPart.slice(0, urlIdPart.length - 1); // Remove last comma
 
         const steamUrl = `/steam?appids=${encodeURIComponent(urlIdPart)}`;
-        const steamApiPriceData = Object.entries(await fetchJson(steamUrl, 'Steam API'));
+        let steamApiPriceData;
+        try {
+          steamApiPriceData = Object.entries(await fetchJson(steamUrl, 'Steam API'));
+        } catch (e) {
+          // One failed batch must not stop the full load. Skip it and continue.
+          console.error("Steam batch failed", e);
+          setFailedBatches((count) => count + 1);
+          setLoadingProgress((progress) => progress + pack.length);
+          continue;
+        }
 
         steamApiPriceData
         .filter(([, value]) => value?.success === true)
@@ -90,7 +125,7 @@ function App() {
               && numberOfCards > 0 && typeof finalPrice === "number") {
             const gameData = {
               id: id,
-              name: sceData?.[0]?.[1] ?? id,
+              name: decodeHtml(sceData?.[0]?.[1] ?? id),
               score: finalPrice / numberOfCards,
               price: finalFormatted ?? "",
               numberOfCards: numberOfCards,
@@ -100,17 +135,18 @@ function App() {
           }
         });
         setGames((loadedGames) => [...loadedGames, ...nextGames].sort((a, b) => a.score - b.score))
-        setLoadingProgress((progress) => progress + steamApiPriceData.length);
+        setLoadingProgress((progress) => progress + pack.length);
       }
     } catch (e) {
       console.error("Game loading failed", e);
+      setErrorMessage("Loading of games failed. Try again later.");
     } finally {
       setIsLoading(false);
     }
   }
 
   return (
-      <div className="container">
+      <div className="container-fluid">
         <div className="row header justify-content-center">
           [WIP] Best Steam Trading Card Games Finder
         </div>
@@ -124,10 +160,10 @@ function App() {
           <div className="col box">
             <progress className="w-100 h-100" value={loadingProgress} max={totalGames}>%</progress>
           </div>
-          <div className="col-2 box">
+          <div className="col-auto box">
             <Button className="btn-primary w-auto"
                     onClick={fetchAndProcessGames} disabled={isLoading}>
-              Load Button
+              Load Games
             </Button>
           </div>
         </div>
@@ -160,34 +196,44 @@ function App() {
         </div>*/}
         <div className="row">
           <div className="col box flex-nowrap">
-            <InputGroup className="search-text-group" disabled={isLoading}>
+            <InputGroup className="search-text-group">
               <InputGroup.Text id="searchInput" className="search-text-icon">🔎</InputGroup.Text>
               <Form.Control className="search-text-field"
                             id="searchInputTextField"
                             aria-describedby="searchInput" type="text"
-                            placeholder="..."/>
+                            placeholder="..."
+                            value={searchText}
+                            onChange={(e) => onSearchChange(e.target.value)}/>
               <Button className="btn-secondary"
                       id={"searchInputClear"}
-                      aria-describedby="searchInput">
+                      aria-describedby="searchInput"
+                      onClick={() => onSearchChange("")}>
                 X
               </Button>
             </InputGroup>
           </div>
         </div>
 
-        <div className="row">
-          {/* TODO
-          <InfiniteScroll dataLength={games.length} next={() => void} hasMore={false} loader={<p>Loading...</p>}>
-            {games.map((game) => (
-                <Game key={game.id} data={game}/>
-            ))}
-          </InfiniteScroll>*/}
-          <div className="game-grid">
-            {games.map((game) => (
-                <Game key={game.id} data={game}/>
-            ))}
-          </div>
-        </div>
+        {(errorMessage || failedBatches > 0) && (
+            <div className="row">
+              <div className="col box">
+                <div className="alert alert-danger mb-0" role="alert">
+                  {errorMessage || `${failedBatches} Steam request(s) failed. Some games are missing.`}
+                </div>
+              </div>
+            </div>
+        )}
+
+        {/* Render games in pages. Thousands of cards at once make the page slow. */}
+        <InfiniteScroll className="game-grid"
+                        dataLength={Math.min(visibleCount, filteredGames.length)}
+                        next={() => setVisibleCount((count) => count + gamesPageSize)}
+                        hasMore={visibleCount < filteredGames.length}
+                        loader={null}>
+          {filteredGames.slice(0, visibleCount).map((game) => (
+              <Game key={game.id} data={game}/>
+          ))}
+        </InfiniteScroll>
       </div>
   )
 }
